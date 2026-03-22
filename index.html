@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>課程查詢系統</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="manifest" href="manifest.json">
+    
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <style>
+        body { background-color: #f2f2f7; -webkit-tap-highlight-color: transparent; }
+        .ios-card { background: white; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        select { -webkit-appearance: none; appearance: none; }
+    </style>
+</head>
+<body>
+    <div id="app" class="max-w-md mx-auto p-4 pb-20">
+        <h1 class="text-center text-lg font-bold mb-4">課程查詢</h1>
+
+        <div class="ios-card p-5 mb-6">
+            <div class="flex bg-gray-200 p-1 rounded-xl mb-6">
+                <button v-for="l in levels" @click="selectedLevel = l; resetSession()" 
+                    :class="selectedLevel === l ? 'bg-white shadow text-black' : 'text-gray-500'"
+                    class="flex-1 py-1.5 rounded-lg text-sm font-semibold transition-all">
+                    {{ l }}
+                </button>
+            </div>
+
+            <div class="flex justify-between gap-6 mb-6">
+                <div class="flex-1">
+                    <div class="flex items-center gap-1 text-[11px] font-bold text-gray-400 mb-1">
+                        <i class="fa-solid fa-comment"></i> 語言
+                    </div>
+                    <div class="relative">
+                        <select v-model="selectedLanguage" class="w-full p-2.5 bg-gray-100 rounded-xl text-sm font-medium border-none outline-none">
+                            <option v-for="opt in languages">{{ opt }}</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="w-32 text-right">
+                    <div class="flex items-center justify-end gap-1 text-[11px] font-bold text-gray-400 mb-1">
+                        <i class="fa-solid fa-circle-nodes"></i> SESSION
+                    </div>
+                    <select v-model="targetSession" class="w-full p-2.5 bg-gray-100 rounded-xl text-sm font-medium border-none outline-none text-right">
+                        <option v-for="n in sessionRange" :value="n">第 {{ n }} 堂</option>
+                    </select>
+                </div>
+            </div>
+
+            <hr class="border-gray-100 mb-4">
+
+            <div class="text-center">
+                <div class="flex items-center justify-center gap-1 text-[11px] font-bold text-gray-400 mb-1">
+                    <i class="fa-solid fa-calendar-days"></i> 課程模式
+                </div>
+                <div class="relative">
+                    <select v-model="selectedType" class="w-full p-3 bg-gray-100 rounded-xl text-sm font-bold text-center border-none outline-none">
+                        <option v-for="type in courseTypes">{{ type }}</option>
+                    </select>
+                    <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[10px] text-gray-400">
+                        <i class="fa-solid fa-chevron-up text-[8px] block"></i>
+                        <i class="fa-solid fa-chevron-down text-[8px] block"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="filteredCourses.length > 0" class="space-y-3">
+            <div v-for="course in filteredCourses" 
+                 @contextmenu.prevent="copyCourse(course)"
+                 class="bg-white p-4 rounded-2xl shadow-sm active:scale-[0.98] transition-transform">
+                <div class="flex justify-between items-start mb-3">
+                    <span class="font-mono font-bold text-sm tracking-tight">{{ course.code }}</span>
+                    <span :class="getTypeStyle(course.type)" class="text-[9px] px-2 py-1 rounded-md font-black uppercase">
+                        {{ course.type }}
+                    </span>
+                </div>
+                <div class="flex justify-between items-end">
+                    <div>
+                        <div class="text-xl font-bold font-rounded" :class="isToday(course.currentSession.date) ? 'text-red-500' : ''">
+                            {{ course.currentSession.date }}
+                        </div>
+                        <div class="text-xs text-gray-400 font-medium">{{ course.language }}</div>
+                    </div>
+                    <div class="text-right">
+                        <div v-if="isToday(course.currentSession.date)" class="text-[10px] font-black text-red-500 mb-0.5">TODAY</div>
+                        <div class="text-md font-bold" :class="isToday(course.currentSession.date) ? 'text-red-500' : ''">
+                            {{ course.currentSession.time }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div v-else class="text-center py-20 opacity-30">
+            <i class="fa-solid fa-magnifying-glass text-4xl mb-4"></i>
+            <p class="text-sm font-bold">沒有符合條件的課程</p>
+        </div>
+
+        <button @click="resetAll" class="fixed bottom-6 right-6 bg-black text-white px-5 py-2.5 rounded-full text-sm font-bold shadow-lg active:scale-95">
+            RESET
+        </button>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, onMounted } = Vue;
+        createApp({
+            setup() {
+                const allCourses = ref([]);
+                const selectedLevel = ref('Level 2');
+                const selectedLanguage = ref('All');
+                const selectedType = ref('All');
+                const targetSession = ref(1);
+
+                const levels = ['Level 2', 'Level 3'];
+                const languages = ['All', 'English', 'Mandarin', 'Cantonese'];
+                const courseTypes = ['All', 'Weekday Evening', 'Weekend Intensive', 'Weekday daytime', 'Consecutive'];
+
+                const sessionRange = computed(() => {
+                    const max = selectedLevel.value === 'Level 2' ? 8 : 18;
+                    return Array.from({length: max}, (_, i) => i + 1);
+                });
+
+                const loadData = async () => {
+                    const res = await fetch('courses.csv');
+                    const text = await res.text();
+                    const rows = text.split('\n').filter(r => r.trim() !== '').slice(1);
+                    allCourses.value = rows.map(row => {
+                        const cols = row.split(',').map(c => c.trim());
+                        const sessions = [];
+                        for (let i = 4; i < cols.length; i += 2) {
+                            if (cols[i]) sessions.push({ num: sessions.length + 1, date: cols[i], time: cols[i+1] });
+                        }
+                        return { code: cols[0], type: cols[1], language: cols[2], level: cols[3], sessions };
+                    });
+                };
+
+                const filteredCourses = computed(() => {
+                    const today = new Date();
+                    today.setHours(0,0,0,0);
+
+                    return allCourses.value.filter(c => {
+                        const s = c.sessions.find(s => s.num === targetSession.value);
+                        if (!s) return false;
+                        
+                        // 日期對比
+                        const [d, m, y] = s.date.split('/');
+                        const sDate = new Date(y, m-1, d);
+                        
+                        return c.level === selectedLevel.value &&
+                               (selectedLanguage.value === 'All' || c.language === selectedLanguage.value) &&
+                               (selectedType.value === 'All' || c.type === selectedType.value) &&
+                               sDate >= today;
+                    }).map(c => ({
+                        ...c,
+                        currentSession: c.sessions.find(s => s.num === targetSession.value)
+                    })).sort((a, b) => {
+                        const d1 = a.currentSession.date.split('/').reverse().join('');
+                        const d2 = b.currentSession.date.split('/').reverse().join('');
+                        return d1.localeCompare(d2);
+                    });
+                });
+
+                const getTypeStyle = (type) => {
+                    const styles = {
+                        'Weekday Evening': 'bg-blue-50 text-blue-500',
+                        'Weekend Intensive': 'bg-orange-50 text-orange-500',
+                        'Weekday daytime': 'bg-green-50 text-green-500',
+                        'Consecutive': 'bg-purple-50 text-purple-500'
+                    };
+                    return styles[type] || 'bg-gray-100 text-gray-400';
+                };
+
+                const isToday = (dateStr) => {
+                    const today = new Date().toLocaleDateString('en-GB'); // d/m/yyyy
+                    const [d, m, y] = new Date().toLocaleDateString('zh-HK').split('/'); // 根據系統可能有差，建議用更嚴謹寫法
+                    const current = new Date();
+                    const formattedToday = `${current.getDate()}/${current.getMonth()+1}/${current.getFullYear()}`;
+                    return dateStr === formattedToday;
+                };
+
+                const copyCourse = (c) => {
+                    const text = `【課程】${c.code}\n模式：${c.type}\n日期：${c.currentSession.date}\n時間：${c.currentSession.time}`;
+                    navigator.clipboard.writeText(text);
+                    alert('已複製課程資料！');
+                };
+
+                const resetAll = () => {
+                    selectedLanguage.value = 'All';
+                    selectedType.value = 'All';
+                    targetSession.value = 1;
+                };
+
+                onMounted(loadData);
+
+                return { levels, selectedLevel, languages, selectedLanguage, courseTypes, selectedType, targetSession, sessionRange, filteredCourses, getTypeStyle, isToday, copyCourse, resetAll };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
