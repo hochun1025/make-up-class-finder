@@ -206,7 +206,7 @@
                 };
 
                 const copyCourse = (c) => {
-                    const text = `【課程】${c.code}\n模式：${c.type}\n語言：${c.language}\n日期：${c.currentSession.date} (${c.currentSession.time})`;
+                    const text = `【Course Code】${c.code}\nCourse Type：${c.type}\nLanguage：${c.language}\nDate：${c.currentSession.date} (${c.currentSession.time})`;
                     navigator.clipboard.writeText(text);
                     // 簡約提示
                     const btn = document.createElement('div');
