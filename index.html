@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>課程查詢系統 Course Finder PRO</title>
+    <title>課程查詢系統 PRO</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -33,20 +33,10 @@
     <div id="app" v-cloak class="max-w-4xl mx-auto p-4 md:p-10 pb-24">
         
         <div class="flex justify-between items-center mb-8">
-            <h1 class="text-xl md:text-2xl font-black tracking-tight text-gray-900">
-                {{ t('title') }} <span class="text-blue-500 text-sm font-bold tracking-normal ml-1">PRO</span>
-            </h1>
-            
-            <div class="flex items-center gap-3">
-                <button @click="toggleLang" class="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 hover:border-gray-300 rounded-xl text-xs font-black shadow-sm transition-all">
-                    <i class="fa-solid fa-earth-asia text-gray-400"></i>
-                    {{ currentLang === 'zh' ? 'English' : '繁體中文' }}
-                </button>
-                
-                <button @click="resetAll" class="hidden md:flex items-center gap-2 px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-xl text-xs font-bold transition-all">
-                    <i class="fa-solid fa-arrow-rotate-left"></i> {{ t('resetBtn') }}
-                </button>
-            </div>
+            <h1 class="text-2xl font-black tracking-tight text-gray-900">課程查詢系統 <span class="text-blue-500 text-sm font-bold tracking-normal ml-1">PRO</span></h1>
+            <button @click="resetAll" class="hidden md:flex items-center gap-2 px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-xl text-xs font-bold transition-all">
+                <i class="fa-solid fa-arrow-rotate-left"></i> 重設全部
+            </button>
         </div>
 
         <div class="ios-card p-6 mb-8 border border-white relative">
@@ -63,12 +53,12 @@
                     <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400">
                         <i class="fa-solid fa-magnifying-glass text-xs"></i>
                     </span>
-                    <input v-model="searchQuery" type="text" :placeholder="t('searchPlaceholder')" 
+                    <input v-model="searchQuery" type="text" placeholder="搜尋課程編號 (例如: IC26)..." 
                         class="w-full pl-10 pr-4 py-3 bg-gray-50 rounded-2xl text-sm font-semibold border-2 border-transparent focus:border-blue-500 outline-none transition-all shadow-inner">
                 </div>
                 <div class="flex items-center justify-between md:justify-end gap-3 px-2">
                     <label class="text-xs font-bold text-gray-500 cursor-pointer select-none" for="pastToggle">
-                        {{ t('showPast') }}
+                        顯示今日以前的課程
                     </label>
                     <input type="checkbox" id="pastToggle" v-model="includePast" 
                         class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 cursor-pointer">
@@ -79,29 +69,29 @@
                 <div class="flex justify-between items-end gap-6">
                     <div class="flex-1">
                         <div class="flex items-center gap-2 text-[10px] font-black text-gray-400 mb-2 uppercase tracking-widest">
-                            <i class="fa-solid fa-language text-blue-500 text-xs"></i> {{ t('labelLang') }}
+                            <i class="fa-solid fa-language text-blue-500 text-xs"></i> 語言
                         </div>
                         <select v-model="selectedLanguage" class="w-full p-4 bg-gray-50 rounded-2xl text-sm font-bold border-2 border-transparent focus:border-blue-500 outline-none transition-all shadow-inner">
-                            <option v-for="opt in languages" :key="opt.value" :value="opt.value">{{ opt.label[currentLang] }}</option>
+                            <option v-for="opt in languages" :key="opt">{{ opt }}</option>
                         </select>
                     </div>
 
                     <div class="w-40">
                         <div class="flex items-center justify-end gap-2 text-[10px] font-black text-gray-400 mb-2 uppercase tracking-widest">
-                            {{ t('labelSession') }} <i class="fa-solid fa-hashtag text-orange-500 text-xs"></i>
+                            第幾堂 <i class="fa-solid fa-hashtag text-orange-500 text-xs"></i>
                         </div>
                         <select v-model="targetSession" class="w-full p-4 bg-gray-50 rounded-2xl text-sm font-bold border-2 border-transparent focus:border-blue-500 outline-none text-right transition-all shadow-inner">
-                            <option v-for="n in sessionRange" :key="n" :value="n">{{ t('sessionPrefix') }}{{ n }}{{ t('sessionSuffix') }}</option>
+                            <option v-for="n in sessionRange" :key="n" :value="n">第 {{ n }} 堂</option>
                         </select>
                     </div>
                 </div>
 
                 <div class="relative">
                     <div class="flex items-center justify-center gap-2 text-[10px] font-black text-gray-400 mb-2 uppercase tracking-widest">
-                        <i class="fa-solid fa-layer-group text-purple-500 text-xs"></i> {{ t('labelType') }}
+                        <i class="fa-solid fa-layer-group text-purple-500 text-xs"></i> 課程模式
                     </div>
                     <select v-model="selectedType" class="w-full p-4 bg-gray-50 rounded-2xl text-sm font-bold text-center border-2 border-transparent focus:border-blue-500 outline-none transition-all shadow-inner">
-                        <option v-for="type in courseTypes" :key="type.value" :value="type.value">{{ type.label[currentLang] }}</option>
+                        <option v-for="type in courseTypes" :key="type">{{ type }}</option>
                     </select>
                     <div class="absolute right-6 top-[72%] -translate-y-1/2 pointer-events-none text-gray-300">
                         <i class="fa-solid fa-chevron-down text-[10px]"></i>
@@ -119,7 +109,7 @@
                 <div class="flex justify-between items-center mb-5">
                     <span class="course-code text-blue-600 text-base">{{ course.code }}</span>
                     <span :class="getTypeStyle(course.type)" class="text-[9px] px-2.5 py-1 rounded-lg font-black uppercase tracking-tighter">
-                        {{ getTranslatedType(course.type) }}
+                        {{ course.type }}
                     </span>
                 </div>
 
@@ -128,7 +118,7 @@
                         <div class="text-xl md:text-2xl font-black font-rounded tracking-tight" :class="isToday(course.currentSession.date) ? 'text-red-500' : 'text-gray-800'">
                             {{ course.currentSession.date }} <span class="text-sm md:text-base font-bold text-gray-500 ml-1">({{ getWeekdayLabel(course.currentSession.date) }})</span>
                         </div>
-                        <div class="text-[11px] text-gray-400 font-bold mt-1 tracking-wide uppercase italic">{{ getTranslatedLang(course.language) }}</div>
+                        <div class="text-[11px] text-gray-400 font-bold mt-1 tracking-wide uppercase italic">{{ course.language }}</div>
                     </div>
                     <div class="text-right">
                         <div v-if="isToday(course.currentSession.date)" class="text-[9px] font-black text-red-500 mb-1 animate-bounce">TODAY</div>
@@ -144,7 +134,7 @@
             <div class="bg-gray-100 w-16 h-16 rounded-3xl flex items-center justify-center mx-auto mb-6 rotate-12">
                 <i class="fa-solid fa-calendar-xmark text-gray-300 text-2xl"></i>
             </div>
-            <p class="text-gray-400 font-bold text-sm">{{ t('noData') }}</p>
+            <p class="text-gray-400 font-bold text-sm">沒有符合條件的課程</p>
             <button @click="resetAll" class="mt-4 text-blue-500 font-bold text-xs hover:underline">RESET ALL</button>
         </div>
 
@@ -164,66 +154,10 @@
                 const targetSession = ref(1);
                 const searchQuery = ref('');
                 const includePast = ref(false);
-                
-                // 預設語系為繁體中文 ('zh')，可點擊切換為英文 ('en')
-                const currentLang = ref('zh');
-
-                // 完全徹底翻譯的雙語字典檔
-                const i18n = {
-                    zh: {
-                        title: '課程查詢系統',
-                        resetBtn: '重設全部',
-                        searchPlaceholder: '搜尋課程編號 (例如: IC26)...',
-                        showPast: '顯示今日以前的課程',
-                        labelLang: '授課語言',
-                        labelSession: '目標堂數',
-                        labelType: '課程模式',
-                        sessionPrefix: '第 ',
-                        sessionSuffix: ' 堂',
-                        noData: '沒有符合條件的課程',
-                        copied: '已複製',
-                        weekdays: ['日', '一', '二', '三', '四', '五', '六']
-                    },
-                    en: {
-                        title: 'Course Finder',
-                        resetBtn: 'Reset All',
-                        searchPlaceholder: 'Search Course Code (e.g., IC26)...',
-                        showPast: 'Show past sessions',
-                        labelLang: 'Language',
-                        labelSession: 'Session No.',
-                        labelType: 'Course Type',
-                        sessionPrefix: 'Session ',
-                        sessionSuffix: '',
-                        noData: 'No matching courses found',
-                        copied: 'Copied',
-                        weekdays: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-                    }
-                };
 
                 const levels = ['Level 2', 'Level 3'];
-                
-                // 語言資料完全分離
-                const languages = [
-                    { value: 'All', label: { zh: '全部', en: 'All' } },
-                    { value: 'English', label: { zh: '英文', en: 'English' } },
-                    { value: 'Mandarin', label: { zh: '普通話', en: 'Mandarin' } },
-                    { value: 'Cantonese', label: { zh: '廣東話', en: 'Cantonese' } }
-                ];
-
-                // 課程模式完全分離
-                const courseTypes = [
-                    { value: 'All', label: { zh: '全部', en: 'All' } },
-                    { value: 'Weekday Evening', label: { zh: '平日晚間', en: 'Weekday Evening' } },
-                    { value: 'Weekend Intensive', label: { zh: '週末密集', en: 'Weekend Intensive' } },
-                    { value: 'Weekday Daytime', label: { zh: '平日日間', en: 'Weekday Daytime' } },
-                    { value: 'Consecutive', label: { zh: '連續密集', en: 'Consecutive' } }
-                ];
-
-                const t = (key) => i18n[currentLang.value][key] || key;
-
-                const toggleLang = () => {
-                    currentLang.value = currentLang.value === 'zh' ? 'en' : 'zh';
-                };
+                const languages = ['All', 'English', 'Mandarin', 'Cantonese'];
+                const courseTypes = ['All', 'Weekday Evening', 'Weekend Intensive', 'Weekday Daytime', 'Consecutive'];
 
                 const sessionRange = computed(() => {
                     const max = selectedLevel.value === 'Level 2' ? 8 : 18;
@@ -246,7 +180,7 @@
                             }
                             return { code: cols[0], type: cols[1], language: cols[2], level: cols[3], sessions };
                         });
-                    } catch (e) { console.error("CSV Loading Error:", e); }
+                    } catch (e) { console.error("CSV 載入失敗：", e); }
                 };
 
                 const parseDate = (dateStr) => {
@@ -257,19 +191,11 @@
                     return new Date(y, m - 1, d);
                 };
 
+                // 【新功能】根據日期字串，自動換算並返回「日、一、二...」的中文簡稱
                 const getWeekdayLabel = (dateStr) => {
                     const d = parseDate(dateStr);
-                    return i18n[currentLang.value].weekdays[d.getDay()] || '';
-                };
-
-                const getTranslatedType = (rawType) => {
-                    const match = courseTypes.find(t => t.value === rawType);
-                    return match ? match.label[currentLang.value] : rawType;
-                };
-
-                const getTranslatedLang = (rawLang) => {
-                    const match = languages.find(l => l.value === rawLang);
-                    return match ? match.label[currentLang.value] : rawLang;
+                    const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+                    return weekdays[d.getDay()] || '';
                 };
 
                 const filteredCourses = computed(() => {
@@ -319,18 +245,12 @@
 
                 const copyCourse = (c) => {
                     const dayLabel = getWeekdayLabel(c.currentSession.date);
-                    let text = '';
-                    
-                    // 根據當前選擇語系，複製出完全純淨、不混雜的文字格式
-                    if (currentLang.value === 'zh') {
-                        text = `【課程編號】${c.code}\n課程模式：${getTranslatedType(c.type)}\n授課語言：${getTranslatedLang(c.language)}\n日期時間：${c.currentSession.date} (${dayLabel}) (${c.currentSession.time})`;
-                    } else {
-                        text = `【Course Code】${c.code}\nCourse Type: ${getTranslatedType(c.type)}\nLanguage: ${getTranslatedLang(c.language)}\nDate/Time: ${c.currentSession.date} (${dayLabel}) (${c.currentSession.time})`;
-                    }
+                    // 【已更新】在複製出來的格式中，日期後面也會自動帶上 (一) ~ (日) 的標記，方便直接貼給學生看
+                    const text = `【Course Code】${c.code}\nCourse Type：${c.type}\nLanguage：${c.language}\nDate：${c.currentSession.date} (${dayLabel}) (${c.currentSession.time})`;
                     
                     navigator.clipboard.writeText(text).then(() => {
                         const toast = document.createElement('div');
-                        toast.innerText = `${t('copied')} ${c.code}!`;
+                        toast.innerText = `已複製 ${c.code}!`;
                         toast.className = "fixed bottom-24 left-1/2 -translate-x-1/2 bg-gray-900/95 backdrop-blur-sm text-white px-5 py-2.5 rounded-full font-bold text-xs z-[100] shadow-xl tracking-wider transition-all animate-bounce";
                         document.body.appendChild(toast);
                         setTimeout(() => {
@@ -357,8 +277,7 @@
                     courseTypes, selectedType, targetSession, sessionRange, 
                     filteredCourses, searchQuery, includePast, 
                     getTypeStyle, isToday, copyCourse, resetAll, resetSession,
-                    getWeekdayLabel, currentLang, toggleLang, t, 
-                    getTranslatedType, getTranslatedLang
+                    getWeekdayLabel
                 };
             }
         }).mount('#app');
