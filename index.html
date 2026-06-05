@@ -91,7 +91,7 @@
                             {{ t('labelSession') }} <i class="fa-solid fa-hashtag text-orange-500 text-xs"></i>
                         </div>
                         <select v-model="targetSession" class="w-full p-4 bg-gray-50 rounded-2xl text-sm font-bold border-2 border-transparent focus:border-blue-500 outline-none text-right transition-all shadow-inner">
-                            <option v-for="n in sessionRange" :key="n" :value="n">{{ t('sessionPrefix') }} {{ n }} {{ t('sessionSuffix') }}</option>
+                            <option v-for="n in sessionRange" :key="n" :value="n">{{ t('sessionPrefix') }}{{ n }}{{ t('sessionSuffix') }}</option>
                         </select>
                     </div>
                 </div>
@@ -165,21 +165,21 @@
                 const searchQuery = ref('');
                 const includePast = ref(false);
                 
-                // 預設語系為繁體中文 ('zh')，可切換為英文 ('en')
+                // 預設語系為繁體中文 ('zh')，可點擊切換為英文 ('en')
                 const currentLang = ref('zh');
 
-                // 語系字典檔
+                // 完全徹底翻譯的雙語字典檔
                 const i18n = {
                     zh: {
                         title: '課程查詢系統',
                         resetBtn: '重設全部',
                         searchPlaceholder: '搜尋課程編號 (例如: IC26)...',
                         showPast: '顯示今日以前的課程',
-                        labelLang: '語言',
-                        labelSession: '第幾堂',
+                        labelLang: '授課語言',
+                        labelSession: '目標堂數',
                         labelType: '課程模式',
-                        sessionPrefix: '第',
-                        sessionSuffix: '堂',
+                        sessionPrefix: '第 ',
+                        sessionSuffix: ' 堂',
                         noData: '沒有符合條件的課程',
                         copied: '已複製',
                         weekdays: ['日', '一', '二', '三', '四', '五', '六']
@@ -192,7 +192,7 @@
                         labelLang: 'Language',
                         labelSession: 'Session No.',
                         labelType: 'Course Type',
-                        sessionPrefix: 'Session',
+                        sessionPrefix: 'Session ',
                         sessionSuffix: '',
                         noData: 'No matching courses found',
                         copied: 'Copied',
@@ -202,20 +202,21 @@
 
                 const levels = ['Level 2', 'Level 3'];
                 
-                // 雙語選單資料對應
+                // 語言資料完全分離
                 const languages = [
-                    { value: 'All', label: { zh: '全部 All', en: 'All' } },
-                    { value: 'English', label: { zh: '英文 English', en: 'English' } },
-                    { value: 'Mandarin', label: { zh: '普通話 Mandarin', en: 'Mandarin' } },
-                    { value: 'Cantonese', label: { zh: '廣東話 Cantonese', en: 'Cantonese' } }
+                    { value: 'All', label: { zh: '全部', en: 'All' } },
+                    { value: 'English', label: { zh: '英文', en: 'English' } },
+                    { value: 'Mandarin', label: { zh: '普通話', en: 'Mandarin' } },
+                    { value: 'Cantonese', label: { zh: '廣東話', en: 'Cantonese' } }
                 ];
 
+                // 課程模式完全分離
                 const courseTypes = [
-                    { value: 'All', label: { zh: '全部 All', en: 'All' } },
-                    { value: 'Weekday Evening', label: { zh: '平日晚間 Weekday Evening', en: 'Weekday Evening' } },
-                    { value: 'Weekend Intensive', label: { zh: '週末密集 Weekend Intensive', en: 'Weekend Intensive' } },
-                    { value: 'Weekday Daytime', label: { zh: '平日日間 Weekday Daytime', en: 'Weekday Daytime' } },
-                    { value: 'Consecutive', label: { zh: '連續密集 Consecutive', en: 'Consecutive' } }
+                    { value: 'All', label: { zh: '全部', en: 'All' } },
+                    { value: 'Weekday Evening', label: { zh: '平日晚間', en: 'Weekday Evening' } },
+                    { value: 'Weekend Intensive', label: { zh: '週末密集', en: 'Weekend Intensive' } },
+                    { value: 'Weekday Daytime', label: { zh: '平日日間', en: 'Weekday Daytime' } },
+                    { value: 'Consecutive', label: { zh: '連續密集', en: 'Consecutive' } }
                 ];
 
                 const t = (key) => i18n[currentLang.value][key] || key;
@@ -261,7 +262,6 @@
                     return i18n[currentLang.value].weekdays[d.getDay()] || '';
                 };
 
-                // 將 CSV 原始字串轉換為當前語系對應的標籤
                 const getTranslatedType = (rawType) => {
                     const match = courseTypes.find(t => t.value === rawType);
                     return match ? match.label[currentLang.value] : rawType;
@@ -321,7 +321,7 @@
                     const dayLabel = getWeekdayLabel(c.currentSession.date);
                     let text = '';
                     
-                    // 根據當前選擇語系，複製出對應的格式
+                    // 根據當前選擇語系，複製出完全純淨、不混雜的文字格式
                     if (currentLang.value === 'zh') {
                         text = `【課程編號】${c.code}\n課程模式：${getTranslatedType(c.type)}\n授課語言：${getTranslatedLang(c.language)}\n日期時間：${c.currentSession.date} (${dayLabel}) (${c.currentSession.time})`;
                     } else {
