@@ -297,10 +297,10 @@
                     
                     if (group.matchedSessions.length === 1) {
                         const s = group.matchedSessions[0];
-                        sessionDetails = `Session : 第 ${s.num} 堂\nDate：${group.date} (${dayLabel}) (${s.time})`;
+                        sessionDetails = `Session: ${s.num} \nDate：${group.date} (${dayLabel}) (${s.time})`;
                     } else {
                         sessionDetails = `Date：${group.date} (${dayLabel})\nSessions (一日共 ${group.matchedSessions.length} 堂)：\n` + 
-                            group.matchedSessions.map(s => `  • 第 ${s.num} 堂：${s.time}`).join('\n');
+                            group.matchedSessions.map(s => `  • ${s.num}：${s.time}`).join('\n');
                     }
 
                     const text = `【Course Code】${group.code}\nCourse Type：${group.type}\nLanguage：${group.language}\n${sessionDetails}`;
@@ -313,10 +313,10 @@
                 // 情況二：單獨點擊卡片內的某個堂數按鈕，只複製那一堂
                 const copySingleSession = (group, session) => {
                     const dayLabel = getWeekdayLabel(group.date);
-                    const text = `【Course Code】${group.code}\nCourse Type：${group.type}\nLanguage：${group.language}\nSession : 第 ${session.num} 堂\nDate：${group.date} (${dayLabel}) (${session.time})`;
+                    const text = `【Course Code】${group.code}\nCourse Type：${group.type}\nLanguage：${group.language}\nSession: ${session.num}\nDate：${group.date} (${dayLabel}) (${session.time})`;
                     
                     navigator.clipboard.writeText(text).then(() => {
-                        showToast(`已複製 ${group.code} (第 ${session.num} 堂)`);
+                        showToast(`已複製 ${group.code} (${session.num})`);
                     });
                 };
 
