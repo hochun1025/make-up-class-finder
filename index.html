@@ -104,34 +104,45 @@
         </div>
 
         <div v-if="filteredCourses.length > 0" class="course-grid">
-            <div v-for="course in filteredCourses" 
-                 :key="`${course.code}-${course.currentSession.num}`"
-                 @click="copyCourse(course)"
-                 class="ios-card p-6 mb-4 md:mb-0 hover:shadow-xl active:scale-[0.98] transition-all cursor-pointer border border-transparent hover:border-blue-200 group">
+            <div v-for="group in filteredCourses" 
+                 :key="group.id"
+                 @click="copyFullGroup(group)"
+                 class="ios-card p-6 mb-4 md:mb-0 hover:shadow-xl active:scale-[0.99] transition-all cursor-pointer border border-transparent hover:border-blue-200 group relative overflow-hidden">
                 
+                <div v-if="group.matchedSessions.length > 1" class="absolute left-0 top-0 bottom-0 w-1.5 bg-orange-500"></div>
+
                 <div class="flex justify-between items-center mb-5">
-                    <div class="flex items-center gap-2">
-                        <span class="course-code text-blue-600 text-base">{{ course.code }}</span>
-                        <span class="bg-gray-100 text-gray-600 text-[10px] px-2 py-0.5 rounded-md font-bold">
-                            第 {{ course.currentSession.num }} 堂
-                        </span>
-                    </div>
-                    <span :class="getTypeStyle(course.type)" class="text-[9px] px-2.5 py-1 rounded-lg font-black uppercase tracking-tighter">
-                        {{ course.type }}
+                    <span class="course-code text-blue-600 text-base">{{ group.code }}</span>
+                    <span :class="getTypeStyle(group.type)" class="text-[9px] px-2.5 py-1 rounded-lg font-black uppercase tracking-tighter">
+                        {{ group.type }}
                     </span>
                 </div>
 
                 <div class="flex justify-between items-end">
-                    <div>
-                        <div class="text-xl md:text-2xl font-black font-rounded tracking-tight" :class="isToday(course.currentSession.date) ? 'text-red-500' : 'text-gray-800'">
-                            {{ course.currentSession.date }} <span class="text-sm md:text-base font-bold text-gray-500 ml-1">({{ getWeekdayLabel(course.currentSession.date) }})</span>
+                    <div class="flex-1 pr-4">
+                        <div class="text-xl md:text-2xl font-black font-rounded tracking-tight" :class="isToday(group.date) ? 'text-red-500' : 'text-gray-800'">
+                            {{ group.date }} <span class="text-sm md:text-base font-bold text-gray-500 ml-1">({{ getWeekdayLabel(group.date) }})</span>
                         </div>
-                        <div class="text-[11px] text-gray-400 font-bold mt-1 tracking-wide uppercase italic">{{ course.language }}</div>
+                        
+                        <div class="flex flex-wrap gap-1.5 mt-3">
+                            <button v-for="s in group.matchedSessions" 
+                                    :key="s.num" 
+                                    @click.stop="copySingleSession(group, s)"
+                                    class="bg-gray-100 hover:bg-blue-600 hover:text-white text-gray-700 text-[10px] px-2.5 py-1 rounded-xl font-bold transition-all flex items-center gap-1 group/btn border border-gray-200/50">
+                                <span>第 {{ s.num }} 堂 ({{ s.time }})</span>
+                                <i class="fa-regular fa-copy text-[9px] opacity-40 group-hover/btn:opacity-100"></i>
+                            </button>
+                        </div>
+                        <div class="text-[11px] text-gray-400 font-bold mt-3 tracking-wide uppercase italic">{{ group.language }}</div>
                     </div>
-                    <div class="text-right">
-                        <div v-if="isToday(course.currentSession.date)" class="text-[9px] font-black text-red-500 mb-1 animate-bounce">TODAY</div>
-                        <div class="text-xl font-black font-rounded" :class="isToday(course.currentSession.date) ? 'text-red-500' : 'text-gray-700'">
-                            {{ course.currentSession.time }}
+                    
+                    <div class="text-right min-w-[90px] self-end mb-1">
+                        <div v-if="isToday(group.date)" class="text-[9px] font-black text-red-500 mb-1 animate-bounce">TODAY</div>
+                        <div v-if="group.matchedSessions.length > 1" class="text-[9px] font-black text-orange-500 tracking-tight uppercase">
+                            <i class="fa-solid fa-bolt"></i> 點堂數單複製
+                        </div>
+                        <div v-else class="text-[9px] font-bold text-gray-400 tracking-tight uppercase">
+                            點卡片複製
                         </div>
                     </div>
                 </div>
@@ -159,7 +170,6 @@
                 const selectedLevel = ref('Level 2');
                 const selectedLanguage = ref('All');
                 const selectedType = ref('All');
-                // 改為 Array 儲存多個選中的堂數，預設選中第 1 堂
                 const targetSessions = ref([1]);
                 const searchQuery = ref('');
                 const includePast = ref(false);
@@ -210,7 +220,7 @@
                     const today = new Date();
                     today.setHours(0,0,0,0);
 
-                    let result = [];
+                    const groupsMap = new Map();
 
                     allCourses.value.forEach(c => {
                         if (c.level !== selectedLevel.value) return;
@@ -218,28 +228,36 @@
                         if (selectedType.value !== 'All' && c.type !== selectedType.value) return;
                         if (searchQuery.value.trim() && !c.code.toLowerCase().includes(searchQuery.value.toLowerCase().trim())) return;
 
-                        // 檢查此課程中，所有被用戶選中的堂數
                         c.sessions.forEach(s => {
                             if (targetSessions.value.includes(s.num)) {
                                 if (!includePast.value) {
                                     const sDate = parseDate(s.date);
                                     if (sDate < today) return;
                                 }
-                                // 扁平化輸出：如果選了多個堂數，會拆分成獨立卡片顯示
-                                result.push({
-                                    ...c,
-                                    currentSession: s
-                                });
+
+                                const key = `${c.code}_${s.date}`;
+                                
+                                if (!groupsMap.has(key)) {
+                                    groupsMap.set(key, {
+                                        id: key,
+                                        code: c.code,
+                                        type: c.type,
+                                        language: c.language,
+                                        date: s.date,
+                                        matchedSessions: []
+                                    });
+                                }
+                                groupsMap.get(key).matchedSessions.push(s);
                             }
                         });
                     });
 
-                    // 排序：先跟日期排，如果同一日，就跟堂數編號排序
-                    return result.sort((a, b) => {
-                        const dateDiff = parseDate(a.currentSession.date) - parseDate(b.currentSession.date);
-                        if (dateDiff !== 0) return dateDiff;
-                        return a.currentSession.num - b.currentSession.num;
+                    const result = Array.from(groupsMap.values()).map(g => {
+                        g.matchedSessions.sort((a, b) => a.num - b.num);
+                        return g;
                     });
+
+                    return result.sort((a, b) => parseDate(a.date) - parseDate(b.date));
                 });
 
                 const getTypeStyle = (type) => {
@@ -260,28 +278,51 @@
                            sessionDate.getFullYear() === today.getFullYear();
                 };
 
-                const copyCourse = (c) => {
-                    const dayLabel = getWeekdayLabel(c.currentSession.date);
-                    // 複製格式加入「第幾堂」，更清晰
-                    const text = `【Course Code】${c.code}\nCourse Type：${c.type}\nLanguage：${c.language}\nSession : 第 ${c.currentSession.num} 堂\nDate：${c.currentSession.date} (${dayLabel}) (${c.currentSession.time})`;
+                // 彈出 Toast 提示
+                const showToast = (msg) => {
+                    const toast = document.createElement('div');
+                    toast.innerText = msg;
+                    toast.className = "fixed bottom-24 left-1/2 -translate-x-1/2 bg-gray-900/95 backdrop-blur-sm text-white px-5 py-2.5 rounded-full font-bold text-xs z-[100] shadow-xl tracking-wider transition-all animate-bounce";
+                    document.body.appendChild(toast);
+                    setTimeout(() => {
+                        toast.style.opacity = '0';
+                        setTimeout(() => toast.remove(), 300);
+                    }, 1200);
+                };
+
+                // 情況一：點擊整張卡片，複製當日全部選中的堂數
+                const copyFullGroup = (group) => {
+                    const dayLabel = getWeekdayLabel(group.date);
+                    let sessionDetails = '';
+                    
+                    if (group.matchedSessions.length === 1) {
+                        const s = group.matchedSessions[0];
+                        sessionDetails = `Session : 第 ${s.num} 堂\nDate：${group.date} (${dayLabel}) (${s.time})`;
+                    } else {
+                        sessionDetails = `Date：${group.date} (${dayLabel})\nSessions (一日共 ${group.matchedSessions.length} 堂)：\n` + 
+                            group.matchedSessions.map(s => `  • 第 ${s.num} 堂：${s.time}`).join('\n');
+                    }
+
+                    const text = `【Course Code】${group.code}\nCourse Type：${group.type}\nLanguage：${group.language}\n${sessionDetails}`;
                     
                     navigator.clipboard.writeText(text).then(() => {
-                        const toast = document.createElement('div');
-                        toast.innerText = `已複製 ${c.code} (第 ${c.currentSession.num} 堂)!`;
-                        toast.className = "fixed bottom-24 left-1/2 -translate-x-1/2 bg-gray-900/95 backdrop-blur-sm text-white px-5 py-2.5 rounded-full font-bold text-xs z-[100] shadow-xl tracking-wider transition-all animate-bounce";
-                        document.body.appendChild(toast);
-                        setTimeout(() => {
-                            toast.style.opacity = '0';
-                            setTimeout(() => toast.remove(), 300);
-                        }, 1200);
+                        showToast(`已複製 ${group.code} 當日全部堂數!`);
                     });
                 };
 
-                // 處理多選邏輯
+                // 情況二：單獨點擊卡片內的某個堂數按鈕，只複製那一堂
+                const copySingleSession = (group, session) => {
+                    const dayLabel = getWeekdayLabel(group.date);
+                    const text = `【Course Code】${group.code}\nCourse Type：${group.type}\nLanguage：${group.language}\nSession : 第 ${session.num} 堂\nDate：${group.date} (${dayLabel}) (${session.time})`;
+                    
+                    navigator.clipboard.writeText(text).then(() => {
+                        showToast(`已複製 ${group.code} (第 ${session.num} 堂)`);
+                    });
+                };
+
                 const toggleSession = (n) => {
                     const index = targetSessions.value.indexOf(n);
                     if (index > -1) {
-                        // 至少保留一個選中，避免畫面空白
                         if (targetSessions.value.length > 1) {
                             targetSessions.value.splice(index, 1);
                         }
@@ -292,9 +333,9 @@
 
                 const toggleAllSessions = () => {
                     if (targetSessions.value.length === sessionRange.value.length) {
-                        targetSessions.value = [1]; // 回歸預設選第一堂
+                        targetSessions.value = [1];
                     } else {
-                        targetSessions.value = [...sessionRange.value]; // 全選
+                        targetSessions.value = [...sessionRange.value];
                     }
                 };
 
@@ -314,7 +355,7 @@
                     levels, selectedLevel, languages, selectedLanguage, 
                     courseTypes, selectedType, targetSessions, sessionRange, 
                     filteredCourses, searchQuery, includePast, 
-                    getTypeStyle, isToday, copyCourse, resetAll, resetSession,
+                    getTypeStyle, isToday, copyFullGroup, copySingleSession, resetAll, resetSession,
                     getWeekdayLabel, toggleSession, toggleAllSessions
                 };
             }
