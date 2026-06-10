@@ -269,3 +269,103 @@
 
                 const getTypeStyle = (type) => {
                     const styles = {
+                        'Weekday Evening': 'bg-blue-50 text-blue-600 border border-blue-100',
+                        'Weekend Intensive': 'bg-orange-50 text-orange-600 border border-orange-100',
+                        'Weekday Daytime': 'bg-green-50 text-green-600 border border-green-100',
+                        'Consecutive': 'bg-purple-50 text-purple-600 border border-purple-100'
+                    };
+                    return styles[type] || 'bg-gray-50 text-gray-500 border border-gray-100';
+                };
+
+                const isToday = (dateStr) => {
+                    const sessionDate = parseDate(dateStr);
+                    const today = new Date();
+                    return sessionDate.getDate() === today.getDate() &&
+                           sessionDate.getMonth() === today.getMonth() &&
+                           sessionDate.getFullYear() === today.getFullYear();
+                };
+
+                const showToast = (msg) => {
+                    const toast = document.createElement('div');
+                    toast.innerText = msg;
+                    toast.className = "fixed bottom-24 left-1/2 -translate-x-1/2 bg-gray-900/95 backdrop-blur-sm text-white px-5 py-2.5 rounded-full font-bold text-xs z-[100] shadow-xl tracking-wider transition-all animate-bounce";
+                    document.body.appendChild(toast);
+                    setTimeout(() => {
+                        toast.style.opacity = '0';
+                        setTimeout(() => toast.remove(), 300);
+                    }, 1200);
+                };
+
+                // 情況一：點擊整張卡片，複製全英文合併訊息
+                const copyFullGroup = (group) => {
+                    const engDay = getEnglishWeekday(group.date);
+                    let sessionDetails = '';
+                    
+                    if (group.matchedSessions.length === 1) {
+                        const s = group.matchedSessions[0];
+                        sessionDetails = `Session: Session ${s.num}\nDate: ${group.date} (${engDay}) (${s.time})`;
+                    } else {
+                        sessionDetails = `Date: ${group.date} (${engDay})\nSessions (${group.matchedSessions.length} sessions total):\n` + 
+                            group.matchedSessions.map(s => `  • Session ${s.num}: ${s.time}`).join('\n');
+                    }
+
+                    const text = `【Course Code】${group.code}\nCourse Type: ${group.type}\nLanguage: ${group.language}\n${sessionDetails}`;
+                    
+                    navigator.clipboard.writeText(text).then(() => {
+                        showToast(`Copied all sessions for ${group.code}!`);
+                    });
+                };
+
+                // 情況二：點擊單堂標籤，複製全英文單堂訊息
+                const copySingleSession = (group, session) => {
+                    const engDay = getEnglishWeekday(group.date);
+                    const text = `【Course Code】${group.code}\nCourse Type: ${group.type}\nLanguage: ${group.language}\nSession: Session ${session.num}\nDate: ${group.date} (${engDay}) (${session.time})`;
+                    
+                    navigator.clipboard.writeText(text).then(() => {
+                        showToast(`Copied Session ${session.num} for ${group.code}!`);
+                    });
+                };
+
+                const toggleSession = (n) => {
+                    const index = targetSessions.value.indexOf(n);
+                    if (index > -1) {
+                        if (targetSessions.value.length > 1) {
+                            targetSessions.value.splice(index, 1);
+                        }
+                    } else {
+                        targetSessions.value.push(n);
+                    }
+                };
+
+                const toggleAllSessions = () => {
+                    if (targetSessions.value.length === sessionRange.value.length) {
+                        targetSessions.value = [1];
+                    } else {
+                        targetSessions.value = [...sessionRange.value];
+                    }
+                };
+
+                const resetAll = () => {
+                    selectedLanguage.value = 'All';
+                    selectedType.value = 'All';
+                    targetSessions.value = [1];
+                    searchQuery.value = '';
+                    includePast.value = false;
+                };
+
+                const resetSession = () => { targetSessions.value = [1]; };
+
+                onMounted(loadData);
+
+                return { 
+                    levels, selectedLevel, languages, selectedLanguage, 
+                    courseTypes, selectedType, targetSessions, sessionRange, 
+                    filteredCourses, searchQuery, includePast, 
+                    getTypeStyle, isToday, copyFullGroup, copySingleSession, resetAll, resetSession,
+                    getWeekdayLabel, toggleSession, toggleAllSessions
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
