@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>課程查詢系統 PRO</title>
+    <title>Course Finder PRO</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -33,9 +33,9 @@
     <div id="app" v-cloak class="max-w-4xl mx-auto p-4 md:p-10 pb-24">
         
         <div class="flex justify-between items-center mb-8">
-            <h1 class="text-2xl font-black tracking-tight text-gray-900">課程查詢系統 <span class="text-blue-500 text-sm font-bold tracking-normal ml-1">PRO</span></h1>
+            <h1 class="text-2xl font-black tracking-tight text-gray-900">Course Finder <span class="text-blue-500 text-sm font-bold tracking-normal ml-1">PRO</span></h1>
             <button @click="resetAll" class="hidden md:flex items-center gap-2 px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-xl text-xs font-bold transition-all">
-                <i class="fa-solid fa-arrow-rotate-left"></i> 重設全部
+                <i class="fa-solid fa-arrow-rotate-left"></i> Reset All
             </button>
         </div>
 
@@ -53,12 +53,12 @@
                     <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400">
                         <i class="fa-solid fa-magnifying-glass text-xs"></i>
                     </span>
-                    <input v-model="searchQuery" type="text" placeholder="搜尋課程編號 (例如: IC26)..." 
+                    <input v-model="searchQuery" type="text" placeholder="Search Course Code (e.g., IC26)..." 
                         class="w-full pl-10 pr-4 py-3 bg-gray-50 rounded-2xl text-sm font-semibold border-2 border-transparent focus:border-blue-500 outline-none transition-all shadow-inner">
                 </div>
                 <div class="flex items-center justify-between md:justify-end gap-3 px-2">
                     <label class="text-xs font-bold text-gray-500 cursor-pointer select-none" for="pastToggle">
-                        顯示今日以前的課程
+                        Show past sessions
                     </label>
                     <input type="checkbox" id="pastToggle" v-model="includePast" 
                         class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 cursor-pointer">
@@ -69,29 +69,29 @@
                 <div class="flex justify-between items-end gap-6">
                     <div class="flex-1">
                         <div class="flex items-center gap-2 text-[10px] font-black text-gray-400 mb-2 uppercase tracking-widest">
-                            <i class="fa-solid fa-language text-blue-500 text-xs"></i> 語言
+                            <i class="fa-solid fa-language text-blue-500 text-xs"></i> Language
                         </div>
                         <select v-model="selectedLanguage" class="w-full p-4 bg-gray-50 rounded-2xl text-sm font-bold border-2 border-transparent focus:border-blue-500 outline-none transition-all shadow-inner">
-                            <option v-for="opt in languages" :key="opt">{{ opt }}</option>
+                            <option v-for="opt in languages" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
                         </select>
                     </div>
 
                     <div class="w-40">
                         <div class="flex items-center justify-end gap-2 text-[10px] font-black text-gray-400 mb-2 uppercase tracking-widest">
-                            第幾堂 <i class="fa-solid fa-hashtag text-orange-500 text-xs"></i>
+                            Session No. <i class="fa-solid fa-hashtag text-orange-500 text-xs"></i>
                         </div>
                         <select v-model="targetSession" class="w-full p-4 bg-gray-50 rounded-2xl text-sm font-bold border-2 border-transparent focus:border-blue-500 outline-none text-right transition-all shadow-inner">
-                            <option v-for="n in sessionRange" :key="n" :value="n">第 {{ n }} 堂</option>
+                            <option v-for="n in sessionRange" :key="n" :value="n">Session {{ n }}</option>
                         </select>
                     </div>
                 </div>
 
                 <div class="relative">
                     <div class="flex items-center justify-center gap-2 text-[10px] font-black text-gray-400 mb-2 uppercase tracking-widest">
-                        <i class="fa-solid fa-layer-group text-purple-500 text-xs"></i> 課程模式
+                        <i class="fa-solid fa-layer-group text-purple-500 text-xs"></i> Course Type
                     </div>
                     <select v-model="selectedType" class="w-full p-4 bg-gray-50 rounded-2xl text-sm font-bold text-center border-2 border-transparent focus:border-blue-500 outline-none transition-all shadow-inner">
-                        <option v-for="type in courseTypes" :key="type">{{ type }}</option>
+                        <option v-for="type in courseTypes" :key="type.value" :value="type.value">{{ type.label }}</option>
                     </select>
                     <div class="absolute right-6 top-[72%] -translate-y-1/2 pointer-events-none text-gray-300">
                         <i class="fa-solid fa-chevron-down text-[10px]"></i>
@@ -104,29 +104,41 @@
             <div v-for="course in filteredCourses" 
                  :key="course.code"
                  @click="copyCourse(course)"
-                 class="ios-card p-6 mb-4 md:mb-0 hover:shadow-xl active:scale-[0.98] transition-all cursor-pointer border border-transparent hover:border-blue-200 group">
+                 class="ios-card p-6 mb-4 md:mb-0 hover:shadow-xl active:scale-[0.98] transition-all cursor-pointer border border-transparent hover:border-blue-200 group flex flex-col justify-between">
                 
-                <div class="flex justify-between items-center mb-5">
-                    <span class="course-code text-blue-600 text-base">{{ course.code }}</span>
-                    <span :class="getTypeStyle(course.type)" class="text-[9px] px-2.5 py-1 rounded-lg font-black uppercase tracking-tighter">
-                        {{ course.type }}
-                    </span>
+                <div>
+                    <div class="flex justify-between items-center mb-4">
+                        <span class="course-code text-blue-600 text-base">{{ course.code }}</span>
+                        <span :class="getTypeStyle(course.type)" class="text-[9px] px-2.5 py-1 rounded-lg font-black uppercase tracking-tighter">
+                            {{ getTranslatedType(course.type) }}
+                        </span>
+                    </div>
+
+                    <div class="text-xl md:text-2xl font-black font-rounded tracking-tight text-gray-800 flex items-center justify-between" :class="isToday(course.targetSessionDate) ? 'text-red-500' : 'text-gray-800'">
+                        <div>
+                            {{ course.targetSessionDate }} 
+                            <span class="text-sm md:text-base font-bold text-gray-500 ml-1">({{ getWeekdayLabel(course.targetSessionDate) }})</span>
+                        </div>
+                        <div v-if="isToday(course.targetSessionDate)" class="text-[9px] font-black text-red-500 animate-bounce">TODAY</div>
+                    </div>
+                    
+                    <div class="text-[11px] text-gray-400 font-bold mt-1 mb-4 uppercase tracking-wide italic border-b border-gray-100 pb-2">
+                        {{ getTranslatedLang(course.language) }}
+                    </div>
                 </div>
 
-                <div class="flex justify-between items-end">
-                    <div>
-                        <div class="text-xl md:text-2xl font-black font-rounded tracking-tight" :class="isToday(course.currentSession.date) ? 'text-red-500' : 'text-gray-800'">
-                            {{ course.currentSession.date }} <span class="text-sm md:text-base font-bold text-gray-500 ml-1">({{ getWeekdayLabel(course.currentSession.date) }})</span>
+                <div class="space-y-2 bg-gray-50 p-3 rounded-xl">
+                    <div v-for="s in course.sameDaySessions" :key="s.num" 
+                         class="flex justify-between items-center text-sm font-semibold"
+                         :class="s.num === targetSession ? 'text-blue-600 font-black' : 'text-gray-600'">
+                        <div class="flex items-center gap-1.5 text-xs">
+                            <i class="fa-solid fa-circle text-[6px]" :class="s.num === targetSession ? 'text-blue-500' : 'text-gray-300'"></i>
+                            Session {{ s.num }}
                         </div>
-                        <div class="text-[11px] text-gray-400 font-bold mt-1 tracking-wide uppercase italic">{{ course.language }}</div>
-                    </div>
-                    <div class="text-right">
-                        <div v-if="isToday(course.currentSession.date)" class="text-[9px] font-black text-red-500 mb-1 animate-bounce">TODAY</div>
-                        <div class="text-xl font-black font-rounded" :class="isToday(course.currentSession.date) ? 'text-red-500' : 'text-gray-700'">
-                            {{ course.currentSession.time }}
-                        </div>
+                        <div class="font-rounded text-sm">{{ s.time }}</div>
                     </div>
                 </div>
+                
             </div>
         </div>
 
@@ -134,7 +146,7 @@
             <div class="bg-gray-100 w-16 h-16 rounded-3xl flex items-center justify-center mx-auto mb-6 rotate-12">
                 <i class="fa-solid fa-calendar-xmark text-gray-300 text-2xl"></i>
             </div>
-            <p class="text-gray-400 font-bold text-sm">沒有符合條件的課程</p>
+            <p class="text-gray-400 font-bold text-sm">No matching courses found</p>
             <button @click="resetAll" class="mt-4 text-blue-500 font-bold text-xs hover:underline">RESET ALL</button>
         </div>
 
@@ -156,8 +168,21 @@
                 const includePast = ref(false);
 
                 const levels = ['Level 2', 'Level 3'];
-                const languages = ['All', 'English', 'Mandarin', 'Cantonese'];
-                const courseTypes = ['All', 'Weekday Evening', 'Weekend Intensive', 'Weekday Daytime', 'Consecutive'];
+                
+                const languages = [
+                    { value: 'All', label: 'All' },
+                    { value: 'English', label: '英文 (English)' },
+                    { value: 'Mandarin', label: '普通話 (Mandarin)' },
+                    { value: 'Cantonese', label: '廣東話 (Cantonese)' }
+                ];
+
+                const courseTypes = [
+                    { value: 'All', label: 'All' },
+                    { value: 'Weekday Evening', label: '平日晚 (Weekday Evening)' },
+                    { value: 'Weekend Intensive', label: '週末密集 (Weekend Intensive)' },
+                    { value: 'Weekday Daytime', label: '平日日 (Weekday Daytime)' },
+                    { value: 'Consecutive', label: '連續密集 (Consecutive)' }
+                ];
 
                 const sessionRange = computed(() => {
                     const max = selectedLevel.value === 'Level 2' ? 8 : 18;
@@ -180,7 +205,7 @@
                             }
                             return { code: cols[0], type: cols[1], language: cols[2], level: cols[3], sessions };
                         });
-                    } catch (e) { console.error("CSV 載入失敗：", e); }
+                    } catch (e) { console.error("CSV Loading Error:", e); }
                 };
 
                 const parseDate = (dateStr) => {
@@ -191,38 +216,57 @@
                     return new Date(y, m - 1, d);
                 };
 
-                // 【新功能】根據日期字串，自動換算並返回「日、一、二...」的中文簡稱
                 const getWeekdayLabel = (dateStr) => {
                     const d = parseDate(dateStr);
-                    const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                    const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
                     return weekdays[d.getDay()] || '';
+                };
+
+                const getTranslatedType = (rawType) => {
+                    const match = courseTypes.find(t => t.value === rawType);
+                    return match ? match.label : rawType;
+                };
+
+                const getTranslatedLang = (rawLang) => {
+                    const match = languages.find(l => l.value === rawLang);
+                    return match ? match.label : rawLang;
                 };
 
                 const filteredCourses = computed(() => {
                     const today = new Date();
                     today.setHours(0,0,0,0);
 
+                    // 1. 先抓出符合基礎篩選條件，且包含「目標堂數 (targetSession)」的課程
                     let filtered = allCourses.value.filter(c => {
                         if (c.level !== selectedLevel.value) return false;
                         if (selectedLanguage.value !== 'All' && c.language !== selectedLanguage.value) return false;
                         if (selectedType.value !== 'All' && c.type !== selectedType.value) return false;
                         if (searchQuery.value.trim() && !c.code.toLowerCase().includes(searchQuery.value.toLowerCase().trim())) return false;
 
-                        const s = c.sessions.find(s => s.num === targetSession.value);
-                        if (!s) return false;
+                        const hasTargetSession = c.sessions.some(s => s.num === targetSession.value);
+                        if (!hasTargetSession) return false;
 
                         if (!includePast.value) {
-                            const sDate = parseDate(s.date);
-                            if (sDate < today) return false;
+                            const targetS = c.sessions.find(s => s.num === targetSession.value);
+                            if (targetS && parseDate(targetS.date) < today) return false;
                         }
 
                         return true;
-                    }).map(c => ({
-                        ...c,
-                        currentSession: c.sessions.find(s => s.num === targetSession.value)
-                    }));
+                    }).map(c => {
+                        const targetS = c.sessions.find(s => s.num === targetSession.value);
+                        const targetDateStr = targetS.date;
 
-                    return filtered.sort((a, b) => parseDate(a.currentSession.date) - parseDate(b.currentSession.date));
+                        // 【核心邏輯】找出這班車在「同一天」裡上的所有 Session（支援一日多堂）
+                        const sameDaySessions = c.sessions.filter(s => s.date === targetDateStr);
+
+                        return {
+                            ...c,
+                            targetSessionDate: targetDateStr,
+                            sameDaySessions: sameDaySessions // 存入當天所有堂數
+                        };
+                    });
+
+                    return filtered.sort((a, b) => parseDate(a.targetSessionDate) - parseDate(b.targetSessionDate));
                 });
 
                 const getTypeStyle = (type) => {
@@ -244,13 +288,19 @@
                 };
 
                 const copyCourse = (c) => {
-                    const dayLabel = getWeekdayLabel(c.currentSession.date);
-                    // 【已更新】在複製出來的格式中，日期後面也會自動帶上 (一) ~ (日) 的標記，方便直接貼給學生看
-                    const text = `【Course Code】${c.code}\nCourse Type：${c.type}\nLanguage：${c.language}\nDate：${c.currentSession.date} (${dayLabel}) (${c.currentSession.time})`;
+                    const dayLabel = getWeekdayLabel(c.targetSessionDate);
+                    
+                    // 【核心邏輯】組合當天所有上課時間的字串
+                    let sessionTimeText = '';
+                    c.sameDaySessions.forEach((s, index) => {
+                        sessionTimeText += `\n   - Session ${s.num}: ${s.time}`;
+                    });
+
+                    const text = `【Course Code】${c.code}\nType：${getTranslatedType(c.type)}\nLanguage：${getTranslatedLang(c.language)}\nDate：${c.targetSessionDate} (${dayLabel})\nTime: ${sessionTimeText}`;
                     
                     navigator.clipboard.writeText(text).then(() => {
                         const toast = document.createElement('div');
-                        toast.innerText = `已複製 ${c.code}!`;
+                        toast.innerText = `Copied ${c.code}!`;
                         toast.className = "fixed bottom-24 left-1/2 -translate-x-1/2 bg-gray-900/95 backdrop-blur-sm text-white px-5 py-2.5 rounded-full font-bold text-xs z-[100] shadow-xl tracking-wider transition-all animate-bounce";
                         document.body.appendChild(toast);
                         setTimeout(() => {
@@ -277,7 +327,7 @@
                     courseTypes, selectedType, targetSession, sessionRange, 
                     filteredCourses, searchQuery, includePast, 
                     getTypeStyle, isToday, copyCourse, resetAll, resetSession,
-                    getWeekdayLabel
+                    getWeekdayLabel, getTranslatedType, getTranslatedLang
                 };
             }
         }).mount('#app');
